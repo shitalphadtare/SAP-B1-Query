@@ -1,0 +1,42 @@
+
+DECLARE @CSV VARCHAR(MAX) 
+declare @docentry int
+declare @visorder int
+(SELECT @CSV =COALESCE(@CSV + ', ', '') + it1.BatchNum ,@docentry=t1.DocEntry,@visorder=t1.VisOrder
+FROM ibt1 it1
+inner join dln1 dn1 on it1.basetype=dn1.objtype and it1.baselinnum=dn1.LineNum and it1.BaseEntry=dn1.DocEntry
+inner join inv1 t1 on dn1.DocEntry=t1.baseentry and dn1.linenum=t1.baseline and dn1.objtype=t1.basetype
+where t1.DocEntry = 32740 and t1.VisOrder=0)
+SELECT @CSV AS batch,@docentry docentry,@visorder visorder
+
+
+
+CREATE FUNCTION dbo.tfn_CoalesceConcat
+(
+  @state int,
+  @visorder int
+)
+RETURNS NVARCHAR(MAX)
+AS 
+BEGIN
+  DECLARE @str NVARCHAR(MAX);
+ 
+  SELECT @str = COALESCE(@str + ', ', '') + it1.BatchNum
+    FROM ibt1 it1
+inner join dln1 dn1 on it1.basetype=dn1.objtype and it1.baselinnum=dn1.LineNum and it1.BaseEntry=dn1.DocEntry
+inner join inv1 t1 on dn1.DocEntry=t1.baseentry and dn1.linenum=t1.baseline and dn1.objtype=t1.basetype
+	WHERE t1.docentry = @state and t1.visorder=@visorder
+
+  RETURN (@str);
+END
+GO
+
+
+SELECT  BatchNum = dbo.tfn_CoalesceConcat(docentry,visorder)
+  FROM INV1
+  where docentry=32740
+  ORDER BY docentry;
+
+
+  select * from invoice_batch_detail where docentry=32740
+  --select * from oinv where docnum=1
