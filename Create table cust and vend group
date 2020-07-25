@@ -1,0 +1,11 @@
+insert into [@vendgroup] (code,docentry,U_group)
+
+select groupcode,row_number() over(order by (select 1)) 'Docentry',groupname from ocrg where grouptype='S'
+
+insert into [@custgroup] (code,docentry,U_group)
+
+select groupcode,row_number() over(order by (select 1)) 'Docentry',groupname from ocrg where grouptype='C'
+
+select * from [@vendgroup]
+
+select * from [@custgroup]
