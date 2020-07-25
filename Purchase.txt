@@ -1,0 +1,95 @@
+********************PURCHASE ORDER*******************
+
+-----------------PURCHASE ORDER VALIDATION - MANDATORY COST CENTER-------------------------------------
+IF transaction_type='A' or transaction_type='U' AND (object_type = '22') 
+then
+select  por1."OcrCode" into OcrCode1 from por1 where  por1."DocEntry" = :list_of_cols_val_tab_del;
+if OcrCode1='' or OcrCode1 is null
+then
+            error := -80;
+            error_message := 'Cost Center is missing for items...';
+end if;
+end if;
+
+
+-------------------PR mandetory for po ---
+ IF @transaction_type IN ('A','U') AND (@Object_type = '22') 
+BEGIN
+	If Exists (Select T0.DocEntry from OPOR T0 Inner Join POR1 T1 on T0.DocEntry = T1.DocEntry Where T0.DocEntry =
+	@list_of_cols_val_tab_del and T1.BaseType<>'1470000113')
+	BEGIN
+		Select @error = 1, @error_message = 'ERROR: Please Add Purchase Request - Mandatory'
+	END
+  END
+  
+--------------------------------PURCHASE ORDER VALIDATION - MANDATORY SHIPPING TYPE-------------------------------------
+IF transaction_type ='A' or transaction_type ='U' AND (Object_type = '22') 
+then
+select "TrnspCode" into POSDocType from OPOR  where  "DocEntry"=:list_of_cols_val_tab_del and "DocType"='I' ;
+if(POSDocType=-1)
+then
+		    error :=45;
+           error_message := 'Shipping type missing in Logistics.....';
+end if;
+end if;
+
+---------------------PURCHASE ORDER VALIDATION - MANDATORY PROJECT CODE-------------------------------------
+IF transaction_type ='A' or transaction_type ='U' AND (object_type = '22') 
+then
+select por1."Project" into Project1 from por1 where por1."DocEntry" =:list_of_cols_val_tab_del;
+if Project1='' or Project1 IS NULL then
+           error :=30;
+            error_message := 'Project Code is missing for items...';
+end if;
+end if;
+-----------------po mandetory for GRN ---
+  IF @transaction_type IN ('A','U') AND (@Object_type = '20') 
+BEGIN
+	If Exists (Select T0.DocEntry from OPDN T0 Inner Join PDN1 T1 on T0.DocEntry = T1.DocEntry Where T0.DocEntry =
+	@list_of_cols_val_tab_del and T1.BaseType<>'22')
+	BEGIN
+		Select @error = 1, @error_message = 'ERROR: Please Add Purchase order - Mandatory'
+	END
+  END
+
+  -----------------GRN mandetory for PI ---
+
+IF @transaction_type IN ('A','U') AND (@Object_type = '18') 
+BEGIN
+if Exists(select T0.DocEntry from OPCH T0  Where T0.DocEntry = @list_of_cols_val_tab_del and T0.DocType='I')
+begin
+If Exists (Select T0.DocEntry from OPCH T0 Inner Join PCH1 T1 on T0.DocEntry = T1.DocEntry Where T0.DocEntry =
+@list_of_cols_val_tab_del and T1.BaseType<>'20')
+BEGIN
+		Select @error = 1, @error_message = 'ERROR: Please Add Goods Receipt po - Mandatory'
+END
+END
+end
+
+----END ---------------------PURCHASE ORDER VALIDATION - MANDATORY PROJECT CODE-------------------------------------
+
+IF (:transaction_type='A' or :transaction_type='U') AND (:Object_type = '20')
+then
+SELECT T0."DocEntry" into GRN from OPDN T0 Inner Join PDN1 T1 ON T0."DocEntry"=T1."DocEntry" where
+T0."DocEntry" = :list_of_cols_val_tab_del and T1."BaseType"=22;
+(SELECT distinct T1."BaseEntry" into GRN from OPDN T0 Inner Join PDN1 T1 ON T0."DocEntry"=T1."DocEntry" where
+T1."DocEntry" = :list_of_cols_val_tab_del  )
+if GRN='' or GRN is null 
+then
+			error := 46;
+          error_message := 'GRN cannot be posted without Purchaser Order...';
+end if;
+end if;
+
+
+ ----Mandatory Vendor Reference No & Date in AP Invoice --------
+ IF transaction_type ='A' AND (object_type = '18')
+then
+select OPCH."NumAtCard" into APDocType from OPCH  where  OPCH."DocType"='I' and OPCH."DocEntry"= :list_of_cols_val_tab_del;
+select "U_BPRefDt" into APDocType1 from OPCH  where  "DocEntry"= :list_of_cols_val_tab_del and "DocType"='I';
+if APDocType='' or APDocType is null 
+then
+		   error := 1;
+           error_message := 'Vendor reference number';
+end if;
+--end if;
