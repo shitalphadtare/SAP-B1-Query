@@ -1,0 +1,35 @@
+Customer Detail Query:-
+
+SELECT 
+T0.[CardCode], T0.[CardName], T0.[CardType]
+, T1.[GroupName],
+  T2.[Name], T2.[Tel1], T2.[Tel2], T2.[Cellolar], T2.[E_MailL]
+, T3.[Street], T3.[Block],
+  T3.[Building], T3.[StreetNo], T3.[ZipCode], T3.[City], T3.[Country], T3.[State],
+   T3.[GSTRegnNo], T3.[GSTType]
+, T4.[TaxId0] 
+   
+   FROM OCRD T0  
+   left JOIN OCRG T1 ON T0.[GroupCode] = T1.[GroupCode] 
+   left JOIN OCPR T2 ON T0.[CardCode] = T2.[CardCode] 
+   left JOIN CRD1 T3 ON T0.[CardCode] = T3.[CardCode] 
+   left JOIN CRD7 T4 ON T3.[CardCode] = T4.[CardCode] and t3.address=t4.address and t3.AddrType=t4.AddrType
+WHERE T0.[CardType] ='c' 
+
+Vendor Detail Query:-
+
+SELECT 
+T0.[CardCode], T0.[CardName], T0.[CardType]
+, T1.[GroupName],
+  T2.[Name], T2.[Tel1], T2.[Tel2], T2.[Cellolar], T2.[E_MailL]
+, T3.[Street], T3.[Block],
+  T3.[Building], T3.[StreetNo], T3.[ZipCode], T3.[City], T3.[Country], T3.[State],
+   T3.[GSTRegnNo], T3.[GSTType]
+, T4.[TaxId0] 
+   
+   FROM OCRD T0  
+   left JOIN OCRG T1 ON T0.[GroupCode] = T1.[GroupCode] 
+   left JOIN OCPR T2 ON T0.[CardCode] = T2.[CardCode] 
+   left JOIN CRD1 T3 ON T0.[CardCode] = T3.[CardCode] 
+   left JOIN CRD7 T4 ON T3.[CardCode] = T4.[CardCode] and t3.address=t4.address and t3.AddrType=t4.AddrType
+WHERE T0.[CardType] ='s' 

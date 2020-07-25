@@ -1,0 +1,143 @@
+DEbtor againg by due date:-
+
+
+SELECT T1.CardCode, T1.CardName, T1.CreditLine, T0.RefDate, T0.Ref1 'Document Number',
+     CASE  WHEN T0.TransType=13 THEN 'Invoice'
+          WHEN T0.TransType=14 THEN 'Credit Note'
+          WHEN T0.TransType=30 THEN 'Journal'
+          WHEN T0.TransType=24 THEN 'Receipt'
+          END AS 'Document Type',
+     T0.DueDate, (T0.Debit- T0.Credit) 'Balance'
+     ,ISNULL((SELECT T0.Debit-T0.Credit WHERE DateDiff(day, T0.DueDate,'[%1]')<=-1),0) 'Future'
+     ,ISNULL((SELECT T0.Debit-T0.Credit WHERE DateDiff(day, T0.DueDate,'[%1]')>=0 and DateDiff(day, T0.DueDate,'[%1]')<=30),0) 'Current'
+     ,ISNULL((SELECT T0.Debit-T0.Credit WHERE DateDiff(day, T0.DueDate,'[%1]')>30 and DateDiff(day, T0.DueDate,'[%1]')<=60),0) '31-60 Days'
+     ,ISNULL((SELECT T0.Debit-T0.Credit WHERE DateDiff(day, T0.DueDate,'[%1]')>60 and DateDiff(day, T0.DueDate,'[%1]')<=90),0) '61-90 Days'
+     ,ISNULL((SELECT T0.Debit-T0.Credit WHERE DateDiff(day, T0.DueDate,'[%1]')>90 and DateDiff(day, T0.DueDate,'[%1]')<=120),0) '91-120 Days'
+     ,ISNULL((SELECT T0.Debit-T0.Credit WHERE DateDiff(day, T0.DueDate,'[%1]')>=121),0) '121+ Days'
+FROM JDT1 T0 INNER JOIN OCRD T1 ON T0.ShortName = T1.CardCode
+WHERE (T0.MthDate IS NULL OR T0.MthDate > [%1]) AND T0.RefDate <= [%1] AND T1.CardType = 'C'
+ORDER BY T1.CardCode, T0.DueDate, T0.Ref1
+
+-----------------------------------------------------------------------------------------
+
+Journel eneteries:-
+
+SELECT
+T0.RefDate AS 'Post Date',
+T0.TransId AS 'JE Numb',
+CASE
+WHEN T0.TransType = -1 THEN 'System Generated'
+WHEN T0.TransType = -2 THEN 'Open Balance'
+WHEN T0.TransType = -3 THEN 'Year End Closing'
+WHEN T0.TransType = 13 THEN 'AR Invoice'
+WHEN T0.TransType = 14 THEN 'AR Cred Memo'
+WHEN T0.TransType = 15 THEN 'AR Delivery'
+WHEN T0.TransType = 16 THEN 'AR Goods Ret'
+WHEN T0.TransType = 17 THEN 'AR Sales Order'
+WHEN T0.TransType = 18 THEN 'AP Invoice'
+WHEN T0.TransType = 19 THEN 'AP Cred Memo'
+WHEN T0.TransType = 20 THEN 'Goods Receipt PO'
+WHEN T0.TransType = 21 THEN 'AP Goods Ret'
+WHEN T0.TransType = 22 THEN 'AP Purch Ord'
+WHEN T0.TransType = 23 THEN 'AR Sales Quote'
+WHEN T0.TransType = 24 THEN 'Incoming Pay'
+WHEN T0.TransType = 25 THEN 'Deposit'
+WHEN T0.TransType = 30 THEN 'Jrnl Entry'
+WHEN T0.TransType = 46 THEN 'Outgoing Pay'
+WHEN T0.TransType = 56 THEN 'Chk for Payment'
+WHEN T0.TransType = 58 THEN 'Inv Bal Adj'
+WHEN T0.TransType = 59 THEN 'Rcpt frm Prod'
+WHEN T0.TransType = 60 THEN 'Goods Issue'
+WHEN T0.TransType = 67 THEN 'Inv Transfer'
+WHEN T0.TransType = 68 THEN 'Work Instruct'
+WHEN T0.TransType = 69 THEN 'Landed Costs'
+WHEN T0.TransType = 76 THEN 'Posted Deposit'
+WHEN T0.TransType = 132 THEN 'Correct Invoice'
+WHEN T0.TransType = 162 THEN 'Inv Reval'
+WHEN T0.TransType = 163 THEN 'AP Corr Inv'
+WHEN T0.TransType = 164 THEN 'AP Corr Inv Rev'
+WHEN T0.TransType = 165 THEN 'AR Corr Inv'
+WHEN T0.TransType = 166 THEN 'AR Corr Inv Rev'
+WHEN T0.TransType = 182 THEN 'BOE Deposit'
+WHEN T0.TransType = 202 THEN 'Prod Ord'
+WHEN T0.TransType = 203 THEN 'AR Down Pay'
+WHEN T0.TransType = 204 THEN 'AP Down Pay'
+WHEN T0.TransType = 321 THEN 'Manual Recon'
+WHEN T0.TransType = 310000001 THEN 'Open Balance'
+ELSE 'RESEARCH'
+END AS 'Trans Def',
+T0.TransType AS 'Trans Type',
+T0.Line_ID +1 AS 'JE Line',
+T0.Account,
+T1.Segment_0 + '-' + T1.Segment_1 AS 'GL Acct',
+T1.AcctName,
+CASE
+WHEN T1.GroupMask = 1 THEN 'Assets'
+WHEN T1.GroupMask = 2 THEN 'Liabilities'
+WHEN T1.GroupMask = 3 THEN 'Equity'
+WHEN T1.GroupMask = 4 THEN 'Revenue'
+WHEN T1.GroupMask = 5 THEN 'COGS'
+WHEN T1.GroupMask = 6 THEN 'Expenses'
+WHEN T1.GroupMask = 7 THEN 'Financing'
+WHEN T1.GroupMask = 8 THEN 'Oth Inc/Exp'
+ELSE 'RESEARCH'
+END AS 'Grp Mask Def',
+T1.GroupMask,
+T0.Debit AS 'Debit',
+T0.Credit AS 'Credit',
+(T0.Debit - T0.Credit) AS 'Net'
+FROM
+JDT1 T0 
+INNER JOIN OACT T1
+ON T0.Account = T1.AcctCode
+WHERE
+T0.RefDate >= [%0]
+AND T0.RefDate <= [%1]
+AND T0.TransType < > -3
+ORDER BY
+T0.RefDate,
+T0.TransId,
+T0.Line_ID,
+T1.Segment_0,
+T1.Segment_1,
+T0.TransType
+FOR BROWSE
+
+-----------------------------------------------------------------------------
+
+TDS register bill wise:-
+
+
+SELECT T0.Docentry, cast(MONTH(T0.[DocDate]) as nvarchar(2))+'/'+cast(YEAR(T0.[DocDate]) as nvarchar(4))as 'Month',  T4.[WTName],OSEC.Code as Section ,
+--OACT.AcctName as Particular,
+T0.[CardCode]as BPCode,  T0.[CardName] as 'Party Name',T3.[TaxId0]as 'PAN No.', 
+case when T5.[TypWTReprt] ='P' then 'Others' else   case when    T5.[TypWTReprt] = 'C' then 'Company'    end end  [Status], 
+isnull(T0.[NumAtCard],'')+' - ' + cast(convert(date,T0.[TaxDate],103) as varchar) as 'Bill No & Date' , T0.[DocDate] EntryDate,T0.[DocNum] as 'A/P Num',
+(T0.[DocTotal] +T1.[WTAmnt]) as 'Total Bill Amount',  T1.[TaxbleAmnt] as 'Amount Debited to P&L' , T1. [Rate] as 'TDS Rate', T1.[WTAmnt] as TDS ,T1.[WTCode], T4.[BaseType] 
+FROM OPCH T0   INNER JOIN PCH5 T1 ON T0.DocEntry = T1.AbsEntry  
+=--inner join PCH1 T2 on T0.DocEntry = T2.DocEntry
+INNER JOIN PCH12 T3 ON T0.DocEntry = T3.DocEntry  INNER JOIN OWHT T4 ON T1.WTCode = T4.WTCode  
+INNER JOIN OCRD T5 ON T0.CardCode = T5.CardCode LEFT JOIN OWHT on OWHT.WTCode=T1.WTCode      
+LEFT JOIN OSEC on OSEC.AbsId=OWHT.Section 
+=--left join OACT on T2.AcctCode=OACT.AcctCode
+where T0.[DocDate] >= [%0] and T0.[DocDate] <= [%1] AND T0.[CANCELED]!='Y' and T0.[CANCELED]!='C'
+--------------------------------------------------------------------
+
+Unadjusted onaccount payments:-
+
+
+SELECT T0.[DocEntry], T0.[DocNum], T0.[DocDate], T0.[TransId], T0.[TaxDate], T0.[CardCode], T0.[CardName], T0.[OpenBal]'Unadjusted Payment', T0.[CashSum], T0.[CheckSum], T0.[TrsfrSum], 
+--T0.[CheckAcct], T0.[TrsfrAcct], T0.[CashAcct], 
+T0.[TrsfrDate], T0.[TrsfrRef]'Bank Transfer Ref',  T0.[PayNoDoc], T0.[NoDocSum], T0.[DocCurr], T0.[DocRate], T0.[DocTotal], T0.[DocTotalFC],  T0.[Comments], T0.[JrnlMemo],  T1.[LineID], T1.[CheckNum]
+--T1.[U_ChequeDT], T0.[Ref1], T0.[CounterRef], T1.[BankCode], T1.[Branch], T1.[AcctNum], T1.[Details], T1.[Trnsfrable],  T1.[Currency], T1.[CountryCod], T1.[CheckAct], T1.[BnkActKey] 
+FROM OVPM T0 INNER JOIN VPM1 T1 ON T0.DocEntry = T1.DocNum WHERE T0.[PayNoDoc] = 'Y' and T0.openbal <> 0 and T0.[DocDate] >=[%1] AND  T0.[DocDate] <=[%2]
+
+--------------------------------------------------------------------------------------------------
+
+unadjusted onaccout receipts:-
+
+SELECT T0.[DocEntry], T0.[DocNum], T0.[DocDate], T0.[TransId], T0.[TaxDate], T0.[CardCode], T0.[CardName], T0.[OpenBal]'Unadjusted Receipt', T0.[CashSum], T0.[CheckSum], T0.[TrsfrSum], 
+--T0.[CheckAcct], T0.[TrsfrAcct], T0.[CashAcct], 
+T0.[TrsfrDate], T0.[TrsfrRef]'Bank Transfer Ref',  T0.[PayNoDoc], T0.[NoDocSum], T0.[DocCurr], T0.[DocRate], T0.[DocTotal], T0.[DocTotalFC],  T0.[Comments], T0.[JrnlMemo],  T1.[LineID], T1.[CheckNum]
+--T1.[U_ChequeDT], T0.[Ref1], T0.[CounterRef], T1.[BankCode], T1.[Branch], T1.[AcctNum], T1.[Details], T1.[Trnsfrable],  T1.[Currency], T1.[CountryCod], T1.[CheckAct], T1.[BnkActKey] 
+FROM ORCT T0 INNER JOIN RCT1 T1 ON T0.DocEntry = T1.DocNum WHERE T0.[PayNoDoc] = 'Y' and T0.openbal <> 0 and T0.[DocDate] >=[%1] AND  T0.[DocDate] <=[%2]

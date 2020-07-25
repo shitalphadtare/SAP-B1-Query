@@ -1,0 +1,69 @@
+Stock details warehouse wise:-
+
+
+/* SELECT FROM [dbo].[OJDT] T0 */DECLARE @ToDate As Date/* WHERE */SET @ToDate = /* T0.RefDate */ '[%1]'
+select T1.LocCode, T3.WhsName, 
+--T5.Itmsgrpnam, 
+T1.ItemCode, T2.ItemName, T1.NetQty, T1.Price, T1.Sumstock from 
+( Select T0.LocCode, T0.ItemCode
+ ,sum(T0.[InQty]-T0.[OutQty]) 'NetQty'
+ ,(case when sum(T0.[InQty]-T0.[OutQty]) = 0 then 0
+   else ((sum(T0.[Sumstock]))/(sum(T0.[InQty]-T0.[OutQty])))
+  end) 'Price', sum(SumStock) 'Sumstock'
+from oivl  T0
+where T0.DocDate <= @toDate
+group by T0.ItemCode,LocCode
+) T1
+inner join OITM T2 on T1.ItemCode=T2.ItemCode
+--inner join OITB T5 on t2.itmsgrpcod = t5.itmsgrpcod
+left outer join OWHS T3 on T1.LocCode=T3.WhsCode
+where T1.Sumstock<>0 
+order by T1.LocCode, T1.ItemCode
+
+
+--------------------------------------------------------------------------------------------------------
+
+Stock movement report for all warehouse:-
+
+DECLARE @FROMDate Datetime 
+DECLARE @ToDate Datetime  
+SELECT @FROMDate = MIN(S0.Docdate)  FROM dbo.OINM S0  WHERE S0.Docdate >='[%0]'  
+SELECT @ToDate = MAX(S1.Docdate)  FROM dbo.OINM S1  WHERE S1.Docdate <='[%1]'  
+SELECT  A.Itemcode,  MAX(A.Dscription) AS ItemName,  SUM(A.OpeningBalance) AS OpeningBalance,  SUM(A.InQ) AS 'In',  SUM(A.OUT) AS Out,  
+((SUM(A.OpeningBalance) + SUM(A.INq)) - SUM(A.OUT)) AS Closing ,  (SELECT I.InvntryUom FROM OITM I WHERE I.ItemCode=A.ItemCode) AS Inventory_UOM
+--, (SELECT I.BuyUnitMsr FROM OITM i WHERE I.ItemCode=A.ItemCode) AS PurchASe_UOM,  
+--(SELECT STR(I.NumInBuy*1,19,6) FROM OITM I WHERE I.ItemCode=A.ItemCode) AS Conversion_Factor
+ FROM (SELECT N1.Itemcode,    N1.Dscription,    (SUM(N1.inqty)-SUM(n1.outqty)) AS OpeningBalance,    0 AS INq,    0 AS OUT   FROM dbo.OINM N1   
+WHERE N1.DocDate < @FROMDate   GROUP BY N1.ItemCode,     N1.Dscription 
+UNION ALL  SELECT N1.Itemcode,   N1.Dscription,   0 AS OpeningBalance,   SUM(N1.inqty) ,   0 AS OUT  FROM dbo.OINM N1  
+WHERE  N1.DocDate >= @FROMDate and   N1.DocDate <= @ToDate and   N1.Inqty >0  GROUP BY N1.ItemCode,    N1.Dscription 
+UNION ALL  SELECT N1.Itemcode,   N1.Dscription,   0 AS OpeningBalance,   0 ,   SUM(N1.outqty) AS OUT  FROM dbo.OINM N1  
+WHERE  N1.DocDate >= @FROMDate and   N1.DocDate <=@ToDate and   N1.OutQty > 0  GROUP BY N1.ItemCode,    N1.Dscription) a,    dbo.OITM I1  
+WHERE A.ItemCode=I1.ItemCode  GROUP BY A.Itemcode  HAVING SUM(A.OpeningBalance) + SUM(A.INq) + SUM(A.OUT) > 0  ORDER BY A.Itemcode.
+
+------------------------------------------------------------------------------------------------
+
+Stock Movement report for selected warehouse:-
+
+
+Declare @FromDate Datetime
+Declare @ToDate Datetime
+Declare @Whse nvarchar(10)
+select @FromDate = min(S0.Docdate) from dbo.OINM S0 where S0.Docdate >='[%0]'
+select @ToDate = max(S1.Docdate) from dbo.OINM s1 where S1.Docdate <='[%1]'
+select @Whse = Max(s2.Warehouse) from dbo.OINM S2 Where S2.Warehouse = '[%2]'
+Select @Whse as 'Warehouse', a.Itemcode, max(a.Dscription) as ItemName,
+sum(a.OpeningBalance) as OpeningBalance, sum(a.INq) as 'IN', sum(a.OUT) as OUT,
+((sum(a.OpeningBalance) + sum(a.INq)) - Sum(a.OUT)) as Closing ,
+(Select i.InvntryUom from OITM i where i.ItemCode=a.Itemcode) as UOM
+from( Select N1.Warehouse, N1.Itemcode, N1.Dscription, (sum(N1.inqty)-sum(n1.outqty))
+as OpeningBalance, 0 as INq, 0 as OUT From dbo.OINM N1
+Where N1.DocDate < @FromDate and N1.Warehouse = @Whse Group By N1.Warehouse,N1.ItemCode,
+N1.Dscription Union All select N1.Warehouse, N1.Itemcode, N1.Dscription, 0 as OpeningBalance,
+sum(N1.inqty) , 0 as OUT From dbo.OINM N1 Where N1.DocDate >= @FromDate and N1.DocDate <= @ToDate
+and N1.Inqty >0 and N1.Warehouse = @Whse Group By N1.Warehouse,N1.ItemCode,N1.Dscription
+Union All select N1.Warehouse, N1.Itemcode, N1.Dscription, 0 as OpeningBalance, 0 , sum(N1.outqty) as OUT
+From dbo.OINM N1 Where N1.DocDate >= @FromDate and N1.DocDate <=@ToDate and N1.OutQty > 0
+and N1.Warehouse = @Whse Group By N1.Warehouse,N1.ItemCode,N1.Dscription) a, dbo.OITM I1
+where a.ItemCode=I1.ItemCode
+Group By a.Itemcode Having sum(a.OpeningBalance) + sum(a.INq) + sum(a.OUT) > 0 Order By a.Itemcode
