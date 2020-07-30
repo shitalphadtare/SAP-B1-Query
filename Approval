@@ -1,0 +1,6 @@
+Payment termwise Approval
+
+SELECT DISTINCT 'TRUE' FROM OCTG T0 WHERE T0.[GroupNum] =$[ODLN.GroupNum] and (
+t0.PymntGroup like '%Again%'
+OR t0.PymntGroup like '%PDC%'
+or  t0.PymntGroup like '%ADV%')
