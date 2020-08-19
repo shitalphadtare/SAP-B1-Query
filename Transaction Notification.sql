@@ -3,7 +3,7 @@
 			------------------------------------block changes in Credit Limit or Commitment Limit----------------------------------
 IF @object_type = '2' AND @transaction_type IN ('U', 'D')
 BEGIN
-IF exist (SELECT distinct T2.[CardCode]
+IF exists (SELECT distinct T2.[CardCode]
 FROM ACRD  T0 
 left join ACRD  T1 on t0.[CardCode] = T1.[CardCode] and t0.loginstanc = t1.loginstanc-1
 left JOIN OCRD T2 ON T0.cardcode = T2.CardCode 
