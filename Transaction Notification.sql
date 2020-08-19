@@ -1,3 +1,22 @@
+=================================================================================================================================================================================
+-------------------------------------------------------------------Business Partner Master---------------------------------------------------------------------------------------
+			------------------------------------block changes in Credit Limit or Commitment Limit----------------------------------
+IF @object_type = '2' AND @transaction_type IN ('U', 'D')
+BEGIN
+IF exist (SELECT distinct T2.[CardCode]
+FROM ACRD  T0 
+left join ACRD  T1 on t0.[CardCode] = T1.[CardCode] and t0.loginstanc = t1.loginstanc-1
+left JOIN OCRD T2 ON T0.cardcode = T2.CardCode 
+WHERE  ((T2.CreditLine <> T1.CreditLine) or (T2.debtLine <> T1.debtLine)) and t0.CardCode=@list_of_cols_val_tab_del 
+and t0.UserSign<>1)
+BEGIN
+		SET @error =1
+		SET @error_message = 'You cannot change Credit Limit or Commitment Limit '
+END
+END
+
+
+
 ================================================================================================================================================================================
 --------------------------------------------------------------SALES QUOTATION---------------------------------------------------------------------------------------------------------------  
 				 -----------------Quotation mandetory for order ---
