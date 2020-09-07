@@ -162,11 +162,11 @@ left outer join NNM1 N1 on N1.Series=T0.Series
 INNER JOIN PCH3 T3 ON T0.DocEntry = T3.DocEntry 
 left outer JOIN PCH12 T7 ON T0.DocEntry = T7.DocEntry 
 Inner Join  OEXD T4 On T3.ExpnsCode = T4.ExpnsCode
-Left Join PCH4 CGST ON T3.DocEntry = CGST.DocEntry And T3.ExpnsCode = CGST.ExpnsCode And CGST.StaType = -100 AND CGST.ExpnsCode<>-1
-Left Join PCH4 SGST ON T3.DocEntry = SGST.DocEntry And T3.ExpnsCode = SGST.ExpnsCode And SGST.StaType in (-110,-150) AND SGST.ExpnsCode<>-1   --UGST Tax Added
-Left Join PCH4 IGST ON T3.DocEntry = IGST.DocEntry And T3.ExpnsCode = IGST.ExpnsCode And IGST.StaType = -120 AND IGST.ExpnsCode<>-1
-Left outer join (select taxrate,sum(TaxSum) 'TaxSum',ExpnsCode,DocEntry from PCH4 where statype not in (-100,-110,-150,-120) and ExpnsCode<>-1  --added Other Tax
-				group by taxrate,ExpnsCode,DocEntry) OTHER ON OTHER.ExpnsCode=t3.ExpnsCode and OTHER.DocEntry=t3.DocEntry
+Left Join PCH4 CGST ON T3.DocEntry = CGST.DocEntry And T3.ExpnsCode = CGST.ExpnsCode And CGST.StaType = -100 AND CGST.ExpnsCode<>-1  and t3.LineNum=cgst.LineNum --linenum 07092020
+Left Join PCH4 SGST ON T3.DocEntry = SGST.DocEntry And T3.ExpnsCode = SGST.ExpnsCode And SGST.StaType in (-110,-150) AND SGST.ExpnsCode<>-1  and t3.LineNum=SGST.LineNum  --UGST Tax Added --linenum 07092020
+Left Join PCH4 IGST ON T3.DocEntry = IGST.DocEntry And T3.ExpnsCode = IGST.ExpnsCode And IGST.StaType = -120 AND IGST.ExpnsCode<>-1 and t3.LineNum=igst.LineNum --linenum 07092020
+Left outer join (select linenum,taxrate,sum(TaxSum) 'TaxSum',ExpnsCode,DocEntry from PCH4 where statype not in (-100,-110,-150,-120) and ExpnsCode<>-1  --added Other Tax
+				group by taxrate,ExpnsCode,DocEntry,linenum) OTHER ON OTHER.ExpnsCode=t3.ExpnsCode and OTHER.DocEntry=t3.DocEntry  and t3.LineNum=other.LineNum --linenum 07092020
 WHERE T0.DocDate >= [%1]AND T0.DocDate <= [%2] AND T0.canceled = 'N' 
 -------------------------------------------------------------------------------------------
 
@@ -320,10 +320,10 @@ INNER JOIN RPC3 T3 ON T0.DocEntry = T3.DocEntry and t3.BaseType<>204 --changes o
 LEFT OUTER JOIN OSLP SLP ON SLP.SLPCODE=T0.SLPCODE
 left outer JOIN RPC12 T7 ON T0.DocEntry = T7.DocEntry 
 Inner Join  OEXD T4 On T3.ExpnsCode = T4.ExpnsCode
-Left Join RPC4 CGST ON T3.DocEntry = CGST.DocEntry And T3.ExpnsCode = CGST.ExpnsCode And CGST.StaType = -100 AND CGST.ExpnsCode<>-1
-Left Join RPC4 SGST ON T3.DocEntry = SGST.DocEntry And T3.ExpnsCode = SGST.ExpnsCode And SGST.StaType in (-110,-150) AND SGST.ExpnsCode<>-1 --UGST tax added
-Left Join RPC4 IGST ON T3.DocEntry = IGST.DocEntry And T3.ExpnsCode = IGST.ExpnsCode And IGST.StaType = -120 AND IGST.ExpnsCode<>-1
-Left outer join (select taxrate,sum(isnull(TaxSum,0)) 'TaxSum',ExpnsCode,DocEntry from RPC4 where statype not in (-100,-110,-150,-120) and ExpnsCode<>-1  --added Other Tax
-				group by taxrate,ExpnsCode,DocEntry) OTHER ON OTHER.ExpnsCode=t3.ExpnsCode and OTHER.DocEntry=t3.DocEntry
+Left Join RPC4 CGST ON T3.DocEntry = CGST.DocEntry And T3.ExpnsCode = CGST.ExpnsCode And CGST.StaType = -100 AND CGST.ExpnsCode<>-1  and t3.LineNum=cgst.LineNum --linenum 07092020
+Left Join RPC4 SGST ON T3.DocEntry = SGST.DocEntry And T3.ExpnsCode = SGST.ExpnsCode And SGST.StaType in (-110,-150) AND SGST.ExpnsCode<>-1 and t3.LineNum=SGST.LineNum --UGST tax added --linenum 07092020
+Left Join RPC4 IGST ON T3.DocEntry = IGST.DocEntry And T3.ExpnsCode = IGST.ExpnsCode And IGST.StaType = -120 AND IGST.ExpnsCode<>-1 and t3.LineNum=igst.LineNum --linenum 07092020
+Left outer join (select linenum,taxrate,sum(isnull(TaxSum,0)) 'TaxSum',ExpnsCode,DocEntry from RPC4 where statype not in (-100,-110,-150,-120) and ExpnsCode<>-1  --added Other Tax
+				group by taxrate,ExpnsCode,DocEntry,linenum) OTHER ON OTHER.ExpnsCode=t3.ExpnsCode and OTHER.DocEntry=t3.DocEntry  and t3.LineNum=other.LineNum --linenum 07092020
 WHERE T0.DocDate >= [%1]AND T0.DocDate <= [%2]AND T0.canceled = 'N'
 ) a order by a.docentry
