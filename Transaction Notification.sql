@@ -381,7 +381,22 @@ END
 			    end
 		END
 						  
-						  
+		-----------------------------------------------------------batch details
+		if @transaction_type IN ('A','U') and @object_type IN ('67')
+		begin 
+		if exists (
+			select distinct wr1.DocEntry
+			from wtr1 wr1
+			left outer join ibt1 it1 on wr1.ObjType=it1.BaseType and wr1.LineNum=it1.BaseLinNum and wr1.DocEntry=it1.BaseEntry
+			left outer join OBTN btn on it1.BatchNum=btn.DistNumber and it1.ItemCode=btn.ItemCode
+			where (btn.MnfSerial is NULL or btn.LotNumber is NULL) and wr1.DocEntry=@list_of_cols_val_tab_del
+			)
+
+		begin 
+			set @error=2
+			set @error_message=N'Tc number or Internal QT not done batch:' 
+		end 
+		end						  
 						  
 /****************************************************************all in one **************************************************/
 
