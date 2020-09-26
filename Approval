@@ -7,3 +7,7 @@ or  t0.PymntGroup like '%ADV%')
 ----------------------------Crdit limit cross-------------------------------------------
 select Distinct  'TRUE'    FROM OINV T0 INNER JOIN OCRD T1 ON T1."CardCode" = T0."CardCode"
 WHERE  T1."Balance"+$[OINV."DocTotal"] > T1."CreditLine" and t0."CardCode"=$[OINV."CardCode"]
+--------------------------Payment Terms if exceed previous invoice customer block
+select distinct 'TRUE' from OINV where 
+"DocStatus"='O' and  DAYS_BETWEEN("DocDate",current_date)>"ExtraDays"
+and "CardCode"=$[OINV."CardCode"]
