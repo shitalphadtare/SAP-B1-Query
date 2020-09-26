@@ -4,3 +4,6 @@ SELECT DISTINCT 'TRUE' FROM OCTG T0 WHERE T0.[GroupNum] =$[ODLN.GroupNum] and (
 t0.PymntGroup like '%Again%'
 OR t0.PymntGroup like '%PDC%'
 or  t0.PymntGroup like '%ADV%')
+----------------------------Crdit limit cross-------------------------------------------
+select Distinct  'TRUE'    FROM OINV T0 INNER JOIN OCRD T1 ON T1."CardCode" = T0."CardCode"
+WHERE  T1."Balance"+$[OINV."DocTotal"] > T1."CreditLine" and t0."CardCode"=$[OINV."CardCode"]
