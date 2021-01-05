@@ -1,0 +1,36 @@
+/* SELECT FROM [dbo].[OINV] T0 */DECLARE @FromMonth As Date/* WHERE */SET @FromMonth = /* Month(T0.DocDate) */ '[%0]'
+/* SELECT FROM [dbo].[OINV] T0 */DECLARE @ToMonth As Date/* WHERE */SET @ToMonth = /* Month(T0.DocDate) */ '[%1]'
+
+DECLARE @cols AS NVARCHAR(MAX),
+    @query  AS NVARCHAR(MAX),
+    @FMMT as NVARCHAR(MAX),
+    @TOMT as NVARCHAR(MAX)
+	
+set @FMMT =@FromMonth ;
+set @TOMT =@ToMonth ;
+
+--SET @cols = (select Distinct coalesce(FORECAST_MONTH_YEAR ,INV_MONTH_YEAR) from FORECAST_SALES )
+
+SET @cols =  STUFF((SELECT distinct ',' + coalesce(FORECAST_MONTH_YEAR ,INV_MONTH_YEAR) 
+            FROM FORECAST_SALES
+            FOR XML PATH(''), TYPE
+            ).value('.', 'NVARCHAR(MAX)') 
+        ,1,1,'')
+
+
+
+set @query = 'select ItemCode,ItemName,Category,[Customer Group],
+             FORECAST_QTY ,INV_QTY "Sale Qty",Variance
+             
+             from (select ItemCode,ItemName,Category,FORECAST_QTY ,INV_QTY,
+			 [Customer Group],Variance from FORECAST_SALES Where
+			  FORECAST_MONTH between  '''+@FMMT+ '''  and '''+@TOMT+'''
+			  AND INV_MONTH between  '''+@FMMT+ '''  and '''+@TOMT+''') x
+			  pivot
+			  (
+			 ItemCode for coalesce(FORECAST_MONTH_YEAR ,INV_MONTH_YEAR) in('+@cols+')
+			  ) p'
+
+
+
+execute(@query)
